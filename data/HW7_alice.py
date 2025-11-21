@@ -13,10 +13,9 @@ from nltk.corpus import wordnet as wn
 from collections import Counter
 from spacy.matcher import PhraseMatcher
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator
-#nltk.download('wordnet')
-#nlp = spacy.load("en_core_web_sm")
-#nlp.add_pipe("spacy_wordnet", after="tagger")
-
+# nltk.download('wordnet')
+# nlp = spacy.load("en_core_web_sm")
+# nlp.add_pipe("spacy_wordnet", after="tagger")
 with open("english.txt", "r", encoding="utf-8") as f:
   lines = f.readlines()
 with open("english.txt", "r", encoding="utf-8") as f:
