@@ -1,3 +1,5 @@
+**Text Cleaning and Setup**
+
 ```{python}
 import spacy
 from nltk.corpus import wordnet as wn
@@ -43,4 +45,22 @@ print(freq.items())
 print(lemma_table(doc, freq))
 sentence_df = pd.DataFrame(freq.items(), columns=["lemma", "count"]).sort_values("count", ascending=False)
 print(sentence_df.head())
+```
+
+**Frequency and Collocations**
+
+```{python}
+
+```
+
+**Syntax Patterns**
+
+```{python}
+
+```
+
+**Semantics and WordNet**
+
+```{python}
+
 ```
