@@ -12,8 +12,15 @@ nlp.add_pipe("spacy_wordnet", after="tagger")
 
 with open("data/english.txt", "r", encoding="utf-8") as f:
   lines = f.readlines()
-with open("data/english.txt", "r", encoding="utf-8") as f:
-    text = f.read()
+#with open("data/french.txt", "r", encoding="utf-8") as f:
+    text = f.readlines()
+
+#with open("data/italian.txt", "r", encoding="utf-8") as f:
+    text = f.readlines()
+#with open("data/spanish.txt", "r", encoding="utf-8") as f:
+    text = f.readlines()
+    
+doc = nlp(text)
 
 def lemma_table(doc, counter):
     data = [(t.lemma_, t.pos_, counter[t.lemma_.lower()]) for t in doc if t.is_alpha]
@@ -25,7 +32,7 @@ def lemma_table(doc, counter):
         seen_lemmas.append(item[0].lower())
         data_unique.append(item)
     return pd.DataFrame(data_unique, columns=["lemma", "pos", "count"]).sort_values("count", ascending=False)
-    doc = nlp(text)
+    
 doc = [t for t in doc
         if not (t.is_stop or t.is_punct or t.is_space or t.like_num)]
 tokens = [t.text for t in doc]
