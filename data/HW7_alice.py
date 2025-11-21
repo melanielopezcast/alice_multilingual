@@ -17,9 +17,9 @@ from spacy_wordnet.wordnet_annotator import WordnetAnnotator
 #nlp = spacy.load("en_core_web_sm")
 #nlp.add_pipe("spacy_wordnet", after="tagger")
 
-with open("English.txt", "r", encoding="utf-8") as f:
+with open("english.txt", "r", encoding="utf-8") as f:
   lines = f.readlines()
-with open("eve.txt", "r", encoding="utf-8") as f:
+with open("english.txt", "r", encoding="utf-8") as f:
     text = f.read()
 
 def lemma_table(doc, counter):
