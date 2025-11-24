@@ -74,3 +74,5 @@ df_dict["Italian"] = info("Italian", text_it, nlp_it, text_it_lines)
 df = pd.DataFrame.from_dict(df_dict, orient="index", columns=["Total Tokens", "Unique Lemmas", "Lexical Diversity", "Number of Sentences"])
 
 print(df)
+
+# part two
