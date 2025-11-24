@@ -64,15 +64,37 @@ def info(lang, text, nlp, text_lines):
     unique_lemmas_count = len(unique_lemmas)
     lexical_diversity = unique_tokens_count/float(total_tokens)
     num_sentences = len(text_lines)
-    return [total_tokens, unique_lemmas_count, lexical_diversity, num_sentences]
+    return [total_tokens, unique_lemmas_count, lexical_diversity, num_sentences, unique_lemmas]
 
 df_dict = {}
-df_dict["English"] = info("English", text_en, nlp_en, text_en_lines)
-df_dict["French"] = info("French", text_fr, nlp_fr, text_fr_lines)
-df_dict["Spanish"] = info("Spanish", text_es, nlp_es, text_es_lines)
-df_dict["Italian"] = info("Italian", text_it, nlp_it, text_it_lines)
-df = pd.DataFrame.from_dict(df_dict, orient="index", columns=["Total Tokens", "Unique Lemmas", "Lexical Diversity", "Number of Sentences"])
+en_info = info("English", text_en, nlp_en, text_en_lines)
+df_dict["English"] = [en_info[0], en_info[1], en_info[2], en_info[3]]
 
+fr_info = info("French", text_fr, nlp_fr, text_fr_lines)
+df_dict["French"] = [fr_info[0], fr_info[1], fr_info[2], fr_info[3]]
+
+es_info = info("Spanish", text_es, nlp_es, text_es_lines)
+df_dict["Spanish"] = [es_info[0], es_info[1], es_info[2], es_info[3]]
+
+it_info = info("Italian", text_it, nlp_it, text_it_lines)
+df_dict["Italian"] = [it_info[0], it_info[1], it_info[2], it_info[3]]
+
+df = pd.DataFrame.from_dict(df_dict, orient="index", columns=["Total Tokens", "Unique Lemmas", "Lexical Diversity", "Number of Sentences"])
 print(df)
 
 # part two
+
+en_lemma_counts = en_info[4]
+fr_lemma_counts = fr_info[4]
+es_lemma_counts = es_info[4]
+it_lemma_counts = it_info[4]
+
+en_lemma_counts_sort = sorted(en_lemma_counts, key=lambda l: l[1], reverse=True)
+fr_lemma_counts_sort = sorted(fr_lemma_counts, key=lambda l: l[1], reverse=True)
+es_lemma_counts_sort = sorted(es_lemma_counts, key=lambda l: l[1], reverse=True)
+it_lemma_counts_sort = sorted(it_lemma_counts, key=lambda l: l[1], reverse=True)
+
+print(en_lemma_counts_sort[:20])
+print(fr_lemma_counts_sort[:20])
+print(es_lemma_counts_sort[:20])
+print(it_lemma_counts_sort[:20])
