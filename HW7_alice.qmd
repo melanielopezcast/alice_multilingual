@@ -9,6 +9,28 @@ from collections import Counter
 from spacy.matcher import PhraseMatcher
 from spacy_wordnet.wordnet_annotator import WordnetAnnotator
 
+#nltk.download('wordnet')
+nlp_en = spacy.load("en_core_web_sm")
+print("English loaded!")
+nlp_fr = spacy.load("fr_core_news_sm") # No pipeline 'Tagger'
+print("French loaded!")
+nlp_es = spacy.load("es_core_news_sm") # No pipeline 'Tagger'
+print("Spanish loaded!")
+nlp_it = spacy.load("it_core_news_sm")
+print("Italian loaded!")
+
+nlp_en.add_pipe("spacy_wordnet", after="tagger")
+nlp_it.add_pipe("spacy_wordnet", after="tagger")
+
+with open("data/english.txt", "r", encoding="utf-8") as f:
+    text_en = f.read()
+with open("data/french.txt", "r", encoding="utf-8") as f:
+    text_fr = f.read()
+with open("data/spanish.txt", "r", encoding="utf-8") as f:
+    text_es = f.read()
+with open("data/italian.txt", "r", encoding="utf-8") as f:
+    text_it = f.read()
+    
 def get_unique_tokens(tokens):
     unique_tokens = []
     for token in tokens:
@@ -29,27 +51,7 @@ def get_unique_lemmas(lemmas):
         data_unique.append(item)
     return data_unique
 
-#nltk.download('wordnet')
-nlp_en = spacy.load("en_core_web_sm")
-print("English loaded!")
-nlp_fr = spacy.load("fr_core_news_sm") # No pipeline 'Tagger'
-print("French loaded!")
-nlp_es = spacy.load("es_core_news_sm") # No pipeline 'Tagger'
-print("Spanish loaded!")
-nlp_it = spacy.load("it_core_news_sm")
-print("Italian loaded!")
 
-nlp_en.add_pipe("spacy_wordnet", after="tagger")
-nlp_it.add_pipe("spacy_wordnet", after="tagger")
-
-with open("data/english.txt", "r", encoding="utf-8") as f:
-    text_en = f.read()
-with open("data/english.txt", "r", encoding="utf-8") as f:
-    text_fr = f.read()
-with open("data/english.txt", "r", encoding="utf-8") as f:
-    text_es = f.read()
-with open("data/english.txt", "r", encoding="utf-8") as f:
-    text_it = f.read()
 
 # type-token ratio :: The term types refers to the number of distinct words. The term tokens refers to the number of all words.
 def clean(lang, text, nlp):
@@ -86,7 +88,7 @@ print(lemma_table(doc, freq))
 sentence_df = pd.DataFrame(freq.items(), columns=["lemma", "count"]).sort_values("count", ascending=False)
 print(sentence_df.head())
 
-df = pd.DataFrame.from_dict(dicct, orient="index", columns=["Total Tokens", "Unique Lemmas", "Lexical Diversity", "Number of Sentences"])
+df = pd.DataFrame.from_dict(dict, orient="index", columns=["Total Tokens", "Unique Lemmas", "Lexical Diversity", "Number of Sentences"])
 ```
 
 **Frequency and Collocations**
