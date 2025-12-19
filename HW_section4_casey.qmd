@@ -1,0 +1,186 @@
+---
+title: "HW_7_casey"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{python}
+import nltk
+from nltk.corpus import wordnet as wn
+import matplotlib.pyplot as plt
+
+print("Downloading necessary NLTK data...")
+nltk.download('wordnet')
+nltk.download('omw-1.4') # Open Multilingual WordNet for non-English languages
+print("Downloads complete.\n")
+
+# STEP 1: DEFINE DATA AND FILES
+
+# The filenames required
+filenames = [
+    "english.txt", 
+    "pg55456.txt", # French
+    "pg28371.txt", # Italian
+    "Carroll, Lewis - Alicia En El País De Las Maravillas.txt" # Spanish
+]
+
+
+nouns = {
+    'cat': {'fra': 'chat', 'ita': 'gatto', 'spa': 'gato'},
+    'queen': {'fra': 'reine', 'ita': 'regina', 'spa': 'reina'},
+    'tea': {'fra': 'thé', 'ita': 'tè', 'spa': 'té'},
+    'king': {'fra': 'roi', 'ita': 're', 'spa': 'rey'},
+    'time': {'fra': 'temps', 'ita': 'tempo', 'spa': 'tiempo'}
+}
+
+verbs = {
+    'run': {'fra': 'courir', 'ita': 'correre', 'spa': 'correr'},
+    'eat': {'fra': 'manger', 'ita': 'mangiare', 'spa': 'comer'},
+    'speak': {'fra': 'parler', 'ita': 'parlare', 'spa': 'hablar'}, # "say/speak"
+    'think': {'fra': 'penser', 'ita': 'pensare', 'spa': 'pensar'},
+    'drink': {'fra': 'boire', 'ita': 'bere', 'spa': 'beber'}
+}
+
+languages = ['eng', 'fra', 'ita', 'spa']
+
+# STEP 2: RETRIEVE SYNSETS, GLOSSES, AND HYPERNYMS
+
+print("--- STEP 2: WordNet Data Retrieval ---")
+
+def get_wordnet_data(word, lang_code, pos_tag):
+    """
+    Helper function to get data for a word in a specific language.
+    """
+    # Get synsets for the language
+    synsets = wn.synsets(word, lang=lang_code, pos=pos_tag)
+    
+    if not synsets:
+        return None
+    
+    synset = synsets[0]
+    
+    # Get English gloss 
+    gloss = synset.definition()
+    
+    # Get hypernyms (parent concepts)
+    hypernyms = synset.hypernyms()
+    hyper_names = [h.name() for h in hypernyms]
+    
+    return {
+        "synset": synset.name(),
+        "gloss": gloss,
+        "hypernyms": hyper_names,
+        "obj": synset # Keep the object for similarity calc later
+    }
+
+# Loop through our lists and print info
+# (Combining nouns and verbs for printing loop)
+all_words = {**nouns, **verbs} 
+
+for eng_word, translations in all_words.items():
+    print(f"\nAnalysis for lemma: {eng_word.upper()}")
+    
+    # Determine POS tag (n for noun, v for verb)
+    pos = wn.NOUN if eng_word in nouns else wn.VERB
+    
+    for lang in languages:
+        # Get the actual word string for this language
+        if lang == 'eng':
+            target_word = eng_word
+        else:
+            target_word = translations[lang]
+            
+        data = get_wordnet_data(target_word, lang, pos)
+        
+        if data:
+            print(f"  [{lang}] Word: {target_word}")
+            print(f"    Synset: {data['synset']}")
+            print(f"    Gloss: {data['gloss']}")
+            print(f"    Hypernyms: {data['hypernyms']}")
+        else:
+            print(f"  [{lang}] Word: {target_word} - Not found in WordNet (Limited Coverage)")
+
+# STEP 3: COMPUTE SIMILARITY SCORES
+
+print("\n--- STEP 3: Computing Similarity Scores ---")
+
+# Chosen pairs
+noun_pair_eng = ('cat', 'queen')
+verb_pair_eng = ('eat', 'drink')
+
+results_nouns = {'eng': 0, 'fra': 0, 'ita': 0, 'spa': 0}
+results_verbs = {'eng': 0, 'fra': 0, 'ita': 0, 'spa': 0}
+
+def get_similarity(word1, word2, lang, pos):
+    """
+    Calculates Wu-Palmer similarity between two words in a given language.
+    """
+    synsets1 = wn.synsets(word1, lang=lang, pos=pos)
+    synsets2 = wn.synsets(word2, lang=lang, pos=pos)
+    
+    if synsets1 and synsets2:
+        s1 = synsets1[0]
+        s2 = synsets2[0]
+        return s1.wup_similarity(s2)
+    else:
+        return 0 # Return 0 if not found
+
+# Calculate for Nouns
+print(f"Calculating similarity for Noun Pair: {noun_pair_eng}")
+for lang in languages:
+    w1 = noun_pair_eng[0] if lang == 'eng' else nouns[noun_pair_eng[0]][lang]
+    w2 = noun_pair_eng[1] if lang == 'eng' else nouns[noun_pair_eng[1]][lang]
+    
+    score = get_similarity(w1, w2, lang, wn.NOUN)
+    results_nouns[lang] = score
+    print(f"  {lang}: {score}")
+
+# Calculate for Verbs
+print(f"Calculating similarity for Verb Pair: {verb_pair_eng}")
+for lang in languages:
+    w1 = verb_pair_eng[0] if lang == 'eng' else verbs[verb_pair_eng[0]][lang]
+    w2 = verb_pair_eng[1] if lang == 'eng' else verbs[verb_pair_eng[1]][lang]
+    
+    score = get_similarity(w1, w2, lang, wn.VERB)
+    results_verbs[lang] = score
+    print(f"  {lang}: {score}")
+
+# STEP 4: VISUALIZATION
+
+print("\n--- STEP 4: Visualizing ---")
+
+# Preparing lists for plotting
+langs = list(results_nouns.keys())
+noun_scores = list(results_nouns.values())
+verb_scores = list(results_verbs.values())
+
+# Create a figure with two subplots (scatter plots)
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
+# Plot 1: Nouns
+ax1.scatter(langs, noun_scores, color='blue', s=100)
+ax1.set_title(f"Similarity: {noun_pair_eng[0]} vs {noun_pair_eng[1]}")
+ax1.set_xlabel("Language")
+ax1.set_ylabel("Wu-Palmer Similarity Score")
+ax1.set_ylim(0, 1)
+ax1.grid(True, linestyle='--', alpha=0.7)
+
+# Plot 2: Verbs
+ax2.scatter(langs, verb_scores, color='red', s=100)
+ax2.set_title(f"Similarity: {verb_pair_eng[0]} vs {verb_pair_eng[1]}")
+ax2.set_xlabel("Language")
+ax2.set_ylabel("Wu-Palmer Similarity Score")
+ax2.set_ylim(0, 1)
+ax2.grid(True, linestyle='--', alpha=0.7)
+
+plt.tight_layout()
+plt.show()
+
+print("Done!")
+```
+
+```         
+Downloading necessary NLTK data... [nltk_data] Downloading package wordnet to [nltk_data]     C:\Users\casey\AppData\Roaming\nltk_data... [nltk_data]   Package wordnet is already up-to-date! True [nltk_data] Downloading package omw-1.4 to [nltk_data]     C:\Users\casey\AppData\Roaming\nltk_data... [nltk_data]   Package omw-1.4 is already up-to-date! True Downloads complete.  --- STEP 2: WordNet Data Retrieval ---  Analysis for lemma: CAT   [eng] Word: cat     Synset: cat.n.01     Gloss: feline mammal usually having thick soft fur and no ability to roar: domestic cats; wildcats     Hypernyms: ['feline.n.01']   [fra] Word: chat     Synset: computerized_tomography.n.01     Gloss: a method of examining body organs by scanning them with X rays and using a computer to construct a series of cross-sectional scans along a single axis     Hypernyms: ['x-raying.n.01']   [ita] Word: gatto     Synset: cat.n.01     Gloss: feline mammal usually having thick soft fur and no ability to roar: domestic cats; wildcats     Hypernyms: ['feline.n.01']   [spa] Word: gato     Synset: cat.n.01     Gloss: feline mammal usually having thick soft fur and no ability to roar: domestic cats; wildcats     Hypernyms: ['feline.n.01']  Analysis for lemma: QUEEN   [eng] Word: queen     Synset: queen.n.01     Gloss: the only fertile female in a colony of social insects such as bees and ants and termites; its function is to lay eggs     Hypernyms: ['insect.n.01']   [fra] Word: reine     Synset: tabby.n.02     Gloss: female cat     Hypernyms: ['domestic_cat.n.01']   [ita] Word: regina     Synset: domestic_carp.n.01     Gloss: large Old World freshwater bottom-feeding fish introduced into Europe from Asia; inhabits ponds and sluggish streams and often raised for food; introduced into United States where it has become a pest     Hypernyms: ['carp.n.02']   [spa] Word: reina     Synset: tabby.n.02     Gloss: female cat     Hypernyms: ['domestic_cat.n.01']  Analysis for lemma: TEA   [eng] Word: tea     Synset: tea.n.01     Gloss: a beverage made by steeping tea leaves in water     Hypernyms: ['beverage.n.01']   [fra] Word: thé     Synset: tea.n.02     Gloss: a light midafternoon meal of tea and sandwiches or cakes     Hypernyms: ['meal.n.01']   [ita] Word: tè     Synset: tea.n.01     Gloss: a beverage made by steeping tea leaves in water     Hypernyms: ['beverage.n.01']   [spa] Word: té     Synset: tea.n.05     Gloss: dried leaves of the tea shrub; used to make tea     Hypernyms: ['herb.n.02']  Analysis for lemma: KING   [eng] Word: king     Synset: king.n.01     Gloss: a male sovereign; ruler of a kingdom     Hypernyms: ['sovereign.n.01']   [fra] Word: roi     Synset: king.n.10     Gloss: (chess) the weakest but the most important piece     Hypernyms: ['chessman.n.01']   [ita] Word: re     Synset: king.n.10     Gloss: (chess) the weakest but the most important piece     Hypernyms: ['chessman.n.01']   [spa] Word: rey     Synset: king.n.10     Gloss: (chess) the weakest but the most important piece     Hypernyms: ['chessman.n.01']  Analysis for lemma: TIME   [eng] Word: time     Synset: time.n.01     Gloss: an instance or single occasion for some event     Hypernyms: ['case.n.01']   [fra] Word: temps     Synset: time.n.05     Gloss: the continuum of experience in which events pass from the future through the present to the past     Hypernyms: ['attribute.n.02']   [ita] Word: tempo     Synset: time.n.05     Gloss: the continuum of experience in which events pass from the future through the present to the past     Hypernyms: ['attribute.n.02']   [spa] Word: tiempo     Synset: time.n.05     Gloss: the continuum of experience in which events pass from the future through the present to the past     Hypernyms: ['attribute.n.02']  Analysis for lemma: RUN   [eng] Word: run     Synset: run.v.01     Gloss: move fast by using one's feet, with one foot off the ground at any given time     Hypernyms: ['travel_rapidly.v.01']   [fra] Word: courir     Synset: run.v.41     Gloss: become undone     Hypernyms: ['disintegrate.v.01']   [ita] Word: correre     Synset: rush.v.04     Gloss: act or move at high speed     Hypernyms: ['act.v.01']   [spa] Word: correr     Synset: race.v.02     Gloss: compete in a race     Hypernyms: ['compete.v.01']  Analysis for lemma: EAT   [eng] Word: eat     Synset: eat.v.01     Gloss: take in solid food     Hypernyms: ['consume.v.02', 'eat.v.02']   [fra] Word: manger     Synset: corrode.v.01     Gloss: cause to deteriorate due to the action of water, air, or an acid     Hypernyms: ['damage.v.01']   [ita] Word: mangiare     Synset: eat.v.02     Gloss: eat a meal; take a meal     Hypernyms: ['consume.v.02']   [spa] Word: comer     Synset: eat.v.02     Gloss: eat a meal; take a meal     Hypernyms: ['consume.v.02']  Analysis for lemma: SPEAK   [eng] Word: speak     Synset: talk.v.02     Gloss: express in speech     Hypernyms: ['communicate.v.02']   [fra] Word: parler     Synset: lecture.v.01     Gloss: deliver a lecture or talk     Hypernyms: ['teach.v.01']   [ita] Word: parlare     Synset: talk.v.02     Gloss: express in speech     Hypernyms: ['communicate.v.02']   [spa] Word: hablar     Synset: talk.v.02     Gloss: express in speech     Hypernyms: ['communicate.v.02']  Analysis for lemma: THINK   [eng] Word: think     Synset: think.v.01     Gloss: judge or regard; look upon; judge     Hypernyms: ['evaluate.v.02']   [fra] Word: penser     Synset: feel.v.04     Gloss: be conscious of a physical, mental, or emotional state     Hypernyms: ['be.v.01']   [ita] Word: pensare     Synset: remember.v.02     Gloss: keep in mind for attention or consideration     Hypernyms: []   [spa] Word: pensar     Synset: think.v.12     Gloss: be capable of conscious thought     Hypernyms: []  Analysis for lemma: DRINK   [eng] Word: drink     Synset: drink.v.01     Gloss: take in liquids     Hypernyms: ['consume.v.02']   [fra] Word: boire     Synset: drink_in.v.01     Gloss: be fascinated or spell-bound by; pay close attention to     Hypernyms: ['steep.v.01']   [ita] Word: bere     Synset: consume.v.02     Gloss: serve oneself to, or consume regularly     Hypernyms: []   [spa] Word: beber     Synset: drink.v.01     Gloss: take in liquids     Hypernyms: ['consume.v.02']  --- STEP 3: Computing Similarity Scores --- Calculating similarity for Noun Pair: ('cat', 'queen')   eng: 0.56   fra: 0.09523809523809523   ita: 0.5625   spa: 0.9333333333333333 Calculating similarity for Verb Pair: ('eat', 'drink')   eng: 0.3333333333333333   fra: 0.2222222222222222   ita: 0.4   spa: 0.3333333333333333  --- STEP 4: Visualizing --- <matplotlib.collections.PathCollection object at 0x0000023D30E6B8C0> Text(0.5, 1.0, 'Similarity: cat vs queen') Text(0.5, 0, 'Language') Text(0, 0.5, 'Wu-Palmer Similarity Score') (0.0, 1.0) <matplotlib.collections.PathCollection object at 0x0000023D35C339D0> Text(0.5, 1.0, 'Similarity: eat vs drink') Text(0.5, 0, 'Language') Text(0, 0.5, 'Wu-Palmer Similarity Score') (0.0, 1.0) Done!
+```
