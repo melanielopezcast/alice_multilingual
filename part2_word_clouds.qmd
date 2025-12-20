@@ -1,0 +1,127 @@
+---
+title: "part2_word_clouds"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{python}
+import spacy
+from collections import Counter
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
+import os
+
+# ---------------------------------------------------------
+# SETUP: Define files and corresponding Spacy models
+# ---------------------------------------------------------
+files_config = [
+    {
+        "file": "english.txt", 
+        "lang": "English", 
+        "model": "en_core_web_sm"
+    },
+    {
+        "file": "pg55456.txt", 
+        "lang": "French", 
+        "model": "fr_core_news_sm"
+    },
+    {
+        "file": "pg28371.txt", 
+        "lang": "Italian", 
+        "model": "it_core_news_sm"
+    },
+    {
+        "file": "Carroll, Lewis - Alicia En El País De Las Maravillas.txt", 
+        "lang": "Spanish", 
+        "model": "es_core_news_sm"
+    }
+]
+
+# We want "Content Lemmas" only (Nouns, Verbs, Adjectives)
+# We exclude pronouns/adverbs to get the "meat" of the story.
+ALLOWED_POS = {'NOUN', 'VERB', 'ADJ'}
+
+# ---------------------------------------------------------
+# STEP 1: PROCESSING FUNCTION
+# ---------------------------------------------------------
+def get_top_lemmas(filename, model_name):
+    print(f"Processing {filename}...")
+    
+    # Check if file exists to avoid crashing
+    if not os.path.exists(filename):
+        print(f"  Warning: {filename} not found. Skipping.")
+        return {}
+
+    # Load the language model
+    try:
+        nlp = spacy.load(model_name)
+        nlp.max_length = 2000000 
+    except OSError:
+        print(f"  Error: Model {model_name} not found. Did you download it?")
+        return {}
+
+    # Read the text
+    with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+        text = f.read()
+
+    # Process text 
+    doc = nlp(text)
+
+    # Extract lemmas
+    lemmas = []
+    for token in doc:
+        if (not token.is_stop) and (not token.is_punct) and (token.pos_ in ALLOWED_POS) and (token.is_alpha):
+            lemmas.append(token.lemma_.lower()) # Store the lowercase lemma
+
+    # Count frequencies
+    counts = Counter(lemmas)
+    
+    # Return top 20 as a dictionary
+    return dict(counts.most_common(20))
+
+# ---------------------------------------------------------
+# STEP 2: GENERATE PLOTS
+# ---------------------------------------------------------
+# Create a figure for the subplots (2 rows, 2 columns)
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+axes = axes.flatten() # Flatten 2D array to 1D for easy looping
+
+results_discussion = {}
+
+for i, config in enumerate(files_config):
+    # Get the data
+    top_dict = get_top_lemmas(config['file'], config['model'])
+    
+    if not top_dict:
+        axes[i].text(0.5, 0.5, "Data Not Available", ha='center')
+        continue
+
+    # Store for discussion later
+    results_discussion[config['lang']] = list(top_dict.keys())[:5] # Just top 5 for text summary
+
+    # Generate Word Cloud
+    wc = WordCloud(width=400, height=300, background_color='white').generate_from_frequencies(top_dict)
+    
+    # Plotting
+    axes[i].imshow(wc, interpolation='bilinear')
+    axes[i].set_title(f"Top 20 Content Lemmas: {config['lang']}")
+    axes[i].axis('off')
+
+plt.tight_layout()
+plt.show()
+
+# ---------------------------------------------------------
+# STEP 3: DISCUSSION OF DIFFERENCES
+# ---------------------------------------------------------
+print("\n" + "="*40)
+print("DISCUSSION OF DIFFERENCES")
+print("="*40)
+print("Here are the top 5 lemmas found for each language to compare:\n")
+
+for lang, words in results_discussion.items():
+    print(f"{lang}: {', '.join(words)}")
+
+
+```
